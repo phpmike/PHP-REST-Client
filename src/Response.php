@@ -63,20 +63,29 @@ class Response implements IResponse {
      * Write $this->headers and $this->parsedResponse
      */
     private function parseResponse() {
-        $token = "\n";
-        $line = strtok($this->returnedTransfer, $token);
+        $lines = explode(PHP_EOL, $this->returnedTransfer);
+        while (false !== $line = array_shift($lines)) {
+            if (stripos($line, ' 100 Continue') !== false && stripos($line, 'HTTP') === 0) {
+                do {
+                    $subline = array_shift($lines);
+                } while (0 < strlen(trim($subline)));
+                array_shift($lines); // also slip next HTTP TAG
 
-        if (stripos($line, ' 100 Continue') !== false && stripos($line, 'HTTP') === 0) {
-            do {
-                $line = strtok($token);
-            } while (0 < strlen(trim($line)));
-            strtok($token); // also slip next HTTP TAG
+                continue;
+            }
+
+            if (stripos($line, 'HTTP') !== 0) {
+                if (0 < strlen(trim($line))) {
+                    $this->parseResponseHeaderLine(trim($line));
+                } else {
+                    $this->parsedResponse = array_shift($lines);
+
+                    return;
+                }
+            }
         }
 
-        while (0 < strlen(trim($line = strtok($token)))) {
-            $this->parseResponseHeaderLine($line);
-        }
-        $this->parsedResponse = strtok("");
+        return;
     }
 
     /**
