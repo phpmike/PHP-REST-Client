@@ -77,7 +77,7 @@ class Response implements IResponse {
             if (stripos($line, 'HTTP') !== 0) {
                 if (0 < strlen(trim($line))) {
                     $this->parseResponseHeaderLine(trim($line));
-                } else {
+                } elseif (1 >= count($lines)) {
                     $this->parsedResponse = array_shift($lines);
 
                     return;
